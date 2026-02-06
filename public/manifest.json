@@ -1,0 +1,15 @@
+{
+    "name": "Krungthai CO-Working Space",
+    "short_name": "Krungthai",
+    "start_url": "/index.html#employee",
+    "display": "standalone",
+    "background_color": "#1e293b",
+    "theme_color": "#667eea",
+    "icons": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>",
+            "type": "image/svg+xml",
+            "sizes": "192x192 512x512"
+        }
+    ]
+}

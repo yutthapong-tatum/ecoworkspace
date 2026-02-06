@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coworking App - Design Concepts</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #e5e5e5;
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        h1 {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .phone-frame {
+            width: 320px;
+            height: 640px;
+            border-radius: 40px;
+            border: 8px solid #333;
+            overflow: hidden;
+            position: relative;
+            background: white;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+
+        .notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 25px;
+            background: #333;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            z-index: 100;
+        }
+
+        /* --- OPTION 1: MINIMALIST --- */
+        .opt-minimalist {
+            background-color: #F9FAFB;
+            color: #111827;
+        }
+        .opt-minimalist .header {
+            padding: 50px 20px 20px;
+            background: #fff;
+        }
+        .opt-minimalist h2 { margin: 0; font-size: 24px; font-weight: 700; }
+        .opt-minimalist p { margin: 5px 0 0; color: #6B7280; font-size: 14px; }
+        .opt-minimalist .card {
+            background: white;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        .opt-minimalist .room-img {
+            height: 120px;
+            background: #f3f4f6;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9CA3AF;
+        }
+        .opt-minimalist .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #ECFDF5;
+            color: #059669;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .opt-minimalist .btn {
+            width: 100%;
+            padding: 12px;
+            background: #000;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-top: 12px;
+            cursor: pointer;
+        }
+
+        /* --- OPTION 2: DARK PREMIUM --- */
+        .opt-dark {
+            background-color: #0F172A;
+            color: #F8FAFC;
+        }
+        .opt-dark .header {
+            padding: 50px 20px 20px;
+        }
+        .opt-dark h2 { margin: 0; font-size: 24px; font-weight: 300; letter-spacing: 0.5px; }
+        .opt-dark p { margin: 5px 0 0; color: #94A3B8; font-size: 14px; }
+        .opt-dark .card {
+            background: #1E293B;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 4px; /* Sharper corners */
+            border: 1px solid #334155;
+        }
+        .opt-dark .room-img {
+            height: 120px;
+            background: #334155;
+            border-radius: 2px;
+            margin-bottom: 12px;
+        }
+        .opt-dark .badge {
+            color: #D4AF37; /* Gold */
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .opt-dark .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #D4AF37 0%, #B4941F 100%);
+            color: #0F172A;
+            border: none;
+            border-radius: 2px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        /* --- OPTION 3: GLASSMORPHISM --- */
+        .opt-glass {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        /* Blobs */
+        .opt-glass::before {
+            content: '';
+            position: absolute;
+            top: -50px; left: -50px;
+            width: 200px; height: 200px;
+            background: #FA8BFF;
+            border-radius: 50%;
+            filter: blur(50px);
+            opacity: 0.6;
+        }
+        .opt-glass::after {
+            content: '';
+            position: absolute;
+            bottom: -50px; right: -50px;
+            width: 200px; height: 200px;
+            background: #2BD2FF;
+            border-radius: 50%;
+            filter: blur(50px);
+            opacity: 0.6;
+        }
+        
+        .opt-glass .header {
+            padding: 50px 20px 20px;
+            position: relative;
+            z-index: 2;
+        }
+        .opt-glass .card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            margin: 20px;
+            padding: 20px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            z-index: 2;
+        }
+        .opt-glass .room-img {
+            height: 120px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            margin-bottom: 12px;
+        }
+        .opt-glass .btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #4c1d95; /* Deep purple text */
+            border: none;
+            border-radius: 16px;
+            font-weight: 700;
+            margin-top: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .label {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div style="width: 100%; text-align: center;">    
+        <h1>Design Concepts</h1>
+        <p>Because the image generator is down, here are live code-based previews.</p>
+    </div>
+
+    <!-- OPTION 1 -->
+    <div>
+        <div class="phone-frame opt-minimalist">
+            <div class="notch"></div>
+            <div class="header">
+                <h2>Browse Rooms</h2>
+                <p>12 Slots Available Today</p>
+            </div>
+            <div class="card">
+                <div class="room-img" style="background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=600&q=80'); background-size: cover;"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                    <span style="font-weight:600">The Focus Pod</span>
+                    <span class="badge">Available</span>
+                </div>
+                <p style="margin-bottom:12px; color:#666; font-size:13px">4 Seats • TV • Whiteboard</p>
+                <button class="btn">Reserve - 10:00 AM</button>
+            </div>
+            <div class="card">
+                <div class="room-img" style="background-image: url('https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=600&q=80'); background-size: cover;"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                    <span style="font-weight:600">Boardroom A</span>
+                    <span class="badge" style="background:#FEF2F2; color:#DC2626">Occupied</span>
+                </div>
+                <p style="margin-bottom:12px; color:#666; font-size:13px">12 Seats • Projector</p>
+                <button class="btn" style="background:#E5E7EB; color:#9CA3AF">Unavailable</button>
+            </div>
+        </div>
+        <span class="label">1. Minimalist (Clean/Apple)</span>
+    </div>
+
+    <!-- OPTION 2 -->
+    <div>
+        <div class="phone-frame opt-dark">
+            <div class="notch"></div>
+            <div class="header">
+                <h2>EXECUTIVE SUITE</h2>
+                <p>Select your workspace</p>
+            </div>
+            <div class="card">
+                <div class="room-img" style="background-image: url('https://images.unsplash.com/photo-1600607686527-6fb886090705?auto=format&fit=crop&w=600&q=80'); background-size: cover; filter: brightness(0.8);"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                    <span style="font-weight:400; font-size: 18px; color: #F8FAFC;">The Onyx Room</span>
+                    <span class="badge">● Available</span>
+                </div>
+                <p style="margin-bottom:12px; color:#94A3B8; font-size:13px">Capacity: 4 / Video Conf</p>
+                <button class="btn">BOOK NOW</button>
+            </div>
+            <div class="card">
+                <div class="room-img" style="background-image: url('https://images.unsplash.com/photo-1600435330664-1c61934f0425?auto=format&fit=crop&w=600&q=80'); background-size: cover; filter: brightness(0.8);"></div>
+                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                    <span style="font-weight:400; font-size: 18px; color: #F8FAFC;">Gold Lounge</span>
+                    <span class="badge" style="color:#64748B">● In Use</span>
+                </div>
+                <button class="btn" style="background:transparent; border:1px solid #334155; color:#94A3B8">Waitlist</button>
+            </div>
+        </div>
+        <span class="label">2. Dark Premium (Luxury)</span>
+    </div>
+
+    <!-- OPTION 3 -->
+    <div>
+        <div class="phone-frame opt-glass">
+            <div class="notch"></div>
+            <div class="header">
+                <h2 style="font-weight:800; text-shadow: 0 2px 10px rgba(0,0,0,0.1)">Hello, Alex 👋</h2>
+                <p style="color:rgba(255,255,255,0.8)">Ready to work?</p>
+            </div>
+            <div class="card">
+                <div class="room-img" style="background-image: url('https://images.unsplash.com/photo-1571624436279-b272aff752b5?auto=format&fit=crop&w=600&q=80'); background-size: cover;"></div>
+                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                    <span style="font-weight:600">Creative Lab</span>
+                    <div style="width:10px; height:10px; background:#4ADE80; border-radius:50%; box-shadow: 0 0 10px #4ADE80;"></div>
+                </div>
+                <p style="margin-bottom:12px; font-size:13px; opacity:0.9">Soundproof • 4K Screen</p>
+                <button class="btn">Reserve Space</button>
+            </div>
+             <div class="card">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                    <span style="font-weight:600">Meeting Room B</span>
+                     <div style="width:10px; height:10px; background:#F87171; border-radius:50%;"></div>
+                </div>
+                <p style="margin-bottom:12px; font-size:13px; opacity:0.8">Occupied until 2:00 PM</p>
+                <div style="height:4px; width:100%; background:rgba(255,255,255,0.2); border-radius:2px;">
+                    <div style="height:100%; width:70%; background:white; border-radius:2px;"></div>
+                </div>
+            </div>
+        </div>
+        <span class="label">3. Glassmorphism (Modern/Vibrant)</span>
+    </div>
+
+</body>
+</html>
