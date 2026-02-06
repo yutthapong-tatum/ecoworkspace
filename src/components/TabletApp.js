@@ -28,39 +28,38 @@ export function renderTabletApp(container) {
       </div>
 
       <!-- Right Panel: Schedule -->
-      <div style="width: 350px; background: rgba(0,0,0,0.2); padding: 40px;">
+      <div style="width: 350px; background: rgba(0,0,0,0.2); padding: 40px; overflow-y: auto;">
         <h3 class="text-h2">Today's Schedule</h3>
         <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 16px;">
           
-          <!-- Schedule Item -->
-          <div class="glass-card" style="opacity: 0.5;">
-            <div class="flex-row" style="justify-content: space-between;">
-              <span style="font-weight: 600;">09:00 - 10:00</span>
-              <span>✅ Done</span>
-            </div>
-            <p class="text-sm">Morning Cleaning</p>
-          </div>
+          ${(() => {
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        const bookings = dataManager.getRoomBookings(currentRoom.id, todayStr);
 
-          <!-- Active Item -->
-          <div class="glass-card" style="border-left: 4px solid ${statusColor}; background: rgba(255,255,255,0.1);">
-             <div class="flex-row" style="justify-content: space-between;">
-              <span style="font-weight: 600;">10:00 - 14:00</span>
-              <span>👀 Now</span>
-            </div>
-            <p class="text-sm">Available for walk-in</p>
-          </div>
+        if (bookings.length === 0) {
+          return '<div class="glass-card" style="opacity: 0.5; text-align: center;">No bookings for today</div>';
+        }
 
-           <!-- Future Item (Alex's Booking) -->
-           <div class="glass-card">
-             <div class="flex-row" style="justify-content: space-between;">
-              <span style="font-weight: 600;">14:00 - 16:00</span>
-              <span>Reserved</span>
-            </div>
-            <div class="flex-row gap-sm" style="margin-top: 8px;">
-               <img src="${users.current.avatar}" style="width: 20px; height: 20px; border-radius: 50%;" />
-               <p class="text-sm">${users.current.name}</p>
-            </div>
-          </div>
+        return bookings.map(b => {
+          const [startH] = b.time.split('-')[0].trim().split(':').map(Number);
+          const isPast = startH < now.getHours();
+          const isActive = startH === now.getHours();
+
+          return `
+                <div class="glass-card" style="${isPast ? 'opacity: 0.5;' : ''} ${isActive ? `border-left: 4px solid ${statusColor}; background: rgba(255,255,255,0.1);` : ''}">
+                  <div class="flex-row" style="justify-content: space-between;">
+                    <span style="font-weight: 600;">${b.time}</span>
+                    <span>${isPast ? '✅ Done' : (isActive ? '👀 Now' : 'Reserved')}</span>
+                  </div>
+                  <div class="flex-row gap-sm" style="margin-top: 8px;">
+                     <img src="${users.current.avatar}" style="width: 20px; height: 20px; border-radius: 50%;" />
+                     <p class="text-sm">${b.userName || users.current.name}</p>
+                  </div>
+                </div>
+              `;
+        }).join('');
+      })()}
           
         </div>
       </div>

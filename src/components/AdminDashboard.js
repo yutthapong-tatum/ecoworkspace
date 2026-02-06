@@ -21,18 +21,29 @@ export function renderAdminDashboard(container) {
           <div class="grid-cols-2" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 40px;">
              <div class="glass-card">
                <h3 class="text-h3">Occupancy</h3>
-               <p class="text-h1" style="color: var(--success);">45%</p>
-               <p class="text-sm">22 people currently checked in</p>
+               <p class="text-h1" style="color: var(--success);">
+                 ${(() => {
+        const total = rooms.length;
+        const occupied = rooms.filter(r => r.status === 'occupied').length;
+        return Math.round((occupied / total) * 100);
+      })()}%
+               </p>
+               <p class="text-sm">${rooms.filter(r => r.status === 'occupied').length} rooms currently active</p>
              </div>
              <div class="glass-card">
                <h3 class="text-h3">Upcoming</h3>
-               <p class="text-h1" style="color: var(--warning);">12</p>
-               <p class="text-sm">Reservations in next 2 hours</p>
+               <p class="text-h1" style="color: var(--warning);">
+                 ${(() => {
+        const users = dataManager.getUsers();
+        return users.current.bookings.length;
+      })()}
+               </p>
+               <p class="text-sm">Total reservations in system</p>
              </div>
              <div class="glass-card">
-               <h3 class="text-h3">Issues</h3>
-               <p class="text-h1" style="color: var(--danger);">0</p>
-               <p class="text-sm">Equipment reports</p>
+               <h3 class="text-h3">System Status</h3>
+               <p class="text-h1" style="color: var(--info);">Active</p>
+               <p class="text-sm">Connectivity: High</p>
              </div>
           </div>
 
