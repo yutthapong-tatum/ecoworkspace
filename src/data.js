@@ -28,10 +28,7 @@ const defaultRooms = [
         facilities: ["Soundproof", "Power"],
         status: "available",
         image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=600&q=80",
-        bookings: [
-            { date: TODAY, time: "10:00 - 11:00" },
-            { date: TODAY, time: "14:00 - 15:00" }
-        ]
+        bookings: []
     },
     {
         id: 1002,
@@ -39,10 +36,10 @@ const defaultRooms = [
         type: "Pod",
         capacity: 1,
         facilities: ["Soundproof", "Monitor"],
-        status: "occupied",
+        status: "available", // Reset to available
         image: "https://images.unsplash.com/photo-1554104707-a76b270e4bbb?auto=format&fit=crop&w=600&q=80",
         bookings: [
-            { date: TODAY, time: "09:00 - 17:00" } // Full day
+            // Remove Vegeta Prince default booking to be clean
         ]
     },
     {
@@ -63,9 +60,7 @@ const defaultRooms = [
         facilities: ["4K Screen", "Mac Mini"],
         status: "available",
         image: "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=600&q=80",
-        bookings: [
-            { date: TOMORROW, time: "10:00 - 11:30" }
-        ]
+        bookings: []
     },
     {
         id: 1005,
@@ -73,11 +68,9 @@ const defaultRooms = [
         type: "Conference",
         capacity: 12,
         facilities: ["Projector", "Video Conf"],
-        status: "occupied",
+        status: "available", // Reset to available
         image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=600&q=80",
-        bookings: [
-            { date: TODAY, time: "13:00 - 18:00" }
-        ]
+        bookings: []
     },
     {
         id: 1006,
@@ -95,25 +88,16 @@ const defaultUsers = {
     current: {
         name: "Alex Johnson",
         role: "Senior Designer",
-        bookings: [
-            {
-                id: 501,
-                roomId: 1001,
-                roomName: "Goku",
-                date: TODAY,
-                time: "14:00 - 16:00",
-                status: "confirmed"
-            }
-        ],
-        avatar: "https://i.pravatar.cc/150?u=alex"
+        avatar: "https://i.pravatar.cc/150?u=alex",
+        bookings: [] // Clean start
     }
 };
 
 // --- Data Manager for State Management & Persistence ---
 class DataManager {
     constructor() {
-        this.STORAGE_KEY_ROOMS = 'cw_rooms_v1';
-        this.STORAGE_KEY_USERS = 'cw_users_v1';
+        this.STORAGE_KEY_ROOMS = 'cw_rooms_v2';
+        this.STORAGE_KEY_USERS = 'cw_users_v2';
         this.listeners = [];
         this.load();
     }
@@ -124,7 +108,8 @@ class DataManager {
             const sUsers = localStorage.getItem(this.STORAGE_KEY_USERS);
 
             if (!sRooms) {
-                this.rooms = defaultRooms;
+                // Deep Copy to prevent memory reference issues
+                this.rooms = JSON.parse(JSON.stringify(defaultRooms));
                 this.save(); // Initialize storage
             } else {
                 this.rooms = JSON.parse(sRooms);
@@ -159,6 +144,15 @@ class DataManager {
                                 } catch (e) { }
                             }
 
+                            // Auto-populate missing avatars
+                            if (!b.avatar) {
+                                if (b.userName === this.users?.current?.name) {
+                                    b.avatar = this.users.current.avatar;
+                                } else {
+                                    b.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(b.userName || 'U')}&background=random`;
+                                }
+                                migrated = true;
+                            }
                         });
                     }
                 });
@@ -170,14 +164,17 @@ class DataManager {
 
             if (migrated) this.save();
 
-            this.users = sUsers ? JSON.parse(sUsers) : defaultUsers;
+            // Load Users (Deep Copy Default)
+            this.users = sUsers ? JSON.parse(sUsers) : JSON.parse(JSON.stringify(defaultUsers));
         } catch (e) {
             console.error("Data Load Error:", e);
-            this.rooms = defaultRooms;
-            this.users = defaultUsers;
+            this.rooms = JSON.parse(JSON.stringify(defaultRooms));
+            this.users = JSON.parse(JSON.stringify(defaultUsers));
             this.save(); // Reset to fresh state
         }
     }
+
+    // ... (save, subscribe, notify ...)
 
     save() {
         localStorage.setItem(this.STORAGE_KEY_ROOMS, JSON.stringify(this.rooms));
@@ -185,37 +182,119 @@ class DataManager {
         this.notify();
     }
 
-    subscribe(callback) {
-        this.listeners.push(callback);
-    }
+    subscribe(callback) { this.listeners.push(callback); }
+    notify() { this.listeners.forEach(cb => cb()); }
 
-    notify() {
-        this.listeners.forEach(cb => cb());
+    // --- Centralized Configuration ---
+    getAppConfig() {
+        return {
+            timeSlots: [
+                "08:00 - 09:00", "09:00 - 10:00", "10:00 - 11:00", "11:00 - 12:00",
+                "13:00 - 14:00", "14:00 - 15:00", "15:00 - 16:00",
+                "16:00 - 17:00", "17:00 - 18:00"
+            ],
+            lunchBreak: { start: 12, end: 13 },
+            checkInWindow: 15 // minutes
+        };
     }
 
     // --- Actions ---
 
-    getRooms() {
-        return this.rooms;
-    }
+    getRooms() { return this.rooms; }
+    getUsers() { return this.users; }
+    getCurrentUser() { return this.users.current; }
+    getRoom(id) { return this.rooms.find(r => r.id === id); }
 
-    getUsers() {
-        return this.users;
-    }
+    // --- Centralized Status Logic ---
+    getRoomStatus(roomId) {
+        const room = this.getRoom(roomId);
+        if (!room) return { status: 'UNKNOWN', color: '#94a3b8', sub: 'Room not found', interactable: false };
 
-    getCurrentUser() {
-        return this.users.current;
-    }
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        const currentTotalMinutes = currentHour * 60 + currentMinute;
+        const todayStr = now.toISOString().split('T')[0];
 
-    getRoom(id) {
-        return this.rooms.find(r => r.id === id);
+        // 1. Check Lunch Break
+        const { lunchBreak, checkInWindow } = this.getAppConfig();
+        if (currentHour >= lunchBreak.start && currentHour < lunchBreak.end) {
+            return { status: 'UNAVAILABLE', color: '#94a3b8', sub: 'Lunch Break (12:00 - 13:00)', interactable: false };
+        }
+
+        // 2. Check Active Bookings
+        const activeBooking = room.bookings?.find(b => {
+            if (b.date !== todayStr) return false;
+            if (!b.time || typeof b.time !== 'string') return false; // Safety Check
+
+            const parts = b.time.split('-');
+            if (parts.length !== 2) return false; // Invalid format
+
+            const [startStr, endStr] = parts.map(s => s.trim());
+
+            // Validate time format
+            if (!startStr.includes(':') || !endStr.includes(':')) return false;
+
+            const startH = parseInt(startStr.split(':')[0]);
+            const startM = parseInt(startStr.split(':')[1]);
+            const endH = parseInt(endStr.split(':')[0]);
+            const endM = parseInt(endStr.split(':')[1]);
+
+            // Check for NaN
+            if (isNaN(startH) || isNaN(startM) || isNaN(endH) || isNaN(endM)) return false;
+
+            const startTotal = startH * 60 + startM;
+            const endTotal = endH * 60 + endM;
+
+            // Coverage: [Start, End)
+            return currentTotalMinutes >= startTotal && currentTotalMinutes < endTotal;
+        });
+
+        if (activeBooking) {
+            if (activeBooking.status === 'checked-in') {
+                return {
+                    status: 'OCCUPIED',
+                    color: '#f87171', // Red
+                    sub: `Occupied by ${activeBooking.userName}`,
+                    interactable: false // Can't book, but maybe check-out/extend later
+                };
+            } else if (activeBooking.status === 'confirmed') {
+                // Determine if late or waiting
+                // Logic: It's active time, but not checked in.
+
+                // If we are strictly implementing "Auto Release", this state only exists 
+                // for the first 15 mins. After that, it should be released or "Late".
+                return {
+                    status: 'WAITING FOR CHECK-IN',
+                    color: '#fbbf24', // Amber
+                    sub: `Please check in within ${checkInWindow} mins`,
+                    interactable: true // Can Check In
+                };
+            }
+        }
+
+        return {
+            status: 'AVAILABLE',
+            color: '#4ade80', // Green
+            sub: 'Ready for use',
+            interactable: true // Can Book
+        };
     }
 
     // Force Reload to fix issues with old data structures if needed
     reset() {
-        localStorage.removeItem(this.STORAGE_KEY_ROOMS);
-        localStorage.removeItem(this.STORAGE_KEY_USERS);
-        location.reload();
+        // Nuclear Option: Clear EVERYTHING
+        // Remove all known keys explicitly first
+        localStorage.removeItem('cw_rooms_v1');
+        localStorage.removeItem('cw_users_v1');
+        localStorage.removeItem('cw_rooms_v2');
+        localStorage.removeItem('cw_users_v2');
+
+        // Then clear everything else
+        localStorage.clear();
+
+        // Force hard reload (bypass cache)
+        window.location.reload(true);
     }
 
     getRoomBookings(roomId, date) {
@@ -234,16 +313,55 @@ class DataManager {
         // Ensure bookings array exists
         if (!room.bookings) room.bookings = [];
 
-        // Validation: Prevent Double Booking
-        const isDoubleBooked = room.bookings.some(b => b.date === customDate && b.time === customTime);
+        // Validation: Prevent Double Booking (Overlap Check)
+        const parseMinutes = (timeStr) => {
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        };
+
+        const [newStartStr, newEndStr] = customTime.split('-').map(s => s.trim());
+        const newStart = parseMinutes(newStartStr);
+        const newEnd = parseMinutes(newEndStr);
+
+        const isDoubleBooked = room.bookings.some(b => {
+            if (b.date !== customDate) return false;
+            // Check overlap
+            const [bStartStr, bEndStr] = b.time.split('-').map(s => s.trim());
+            const bStart = parseMinutes(bStartStr);
+            const bEnd = parseMinutes(bEndStr);
+
+            // Overlap if (StartA < EndB) and (EndA > StartB)
+            return (newStart < bEnd && newEnd > bStart);
+        });
+
         if (isDoubleBooked) {
-            return { success: false, message: `Slot ${customTime} is already booked! Please choose another.` };
+            return { success: false, message: `Time slot ${customTime} overlaps with an existing booking!` };
+        }
+
+        // Validation: Prevent User from Double Booking (Concurrent Bookings)
+        // One user cannot be in two rooms at once.
+        const hasUserConflict = this.users.current.bookings.some(ub => {
+            if (ub.date !== customDate) return false;
+            // status check? even if 'checked-in', they are busy. 
+            // If 'confirmed' or 'checked-in', it's a conflict.
+
+            const [uStartStr, uEndStr] = ub.time.split('-').map(s => s.trim());
+            const uStart = parseMinutes(uStartStr);
+            const uEnd = parseMinutes(uEndStr);
+
+            return (newStart < uEnd && newEnd > uStart);
+        });
+
+        if (hasUserConflict) {
+            return { success: false, message: "You already have a booking during this time!" };
         }
 
         // Add booking to Room's record
         room.bookings.push({
             date: customDate,
-            time: customTime
+            time: customTime,
+            userName: this.users.current.name,
+            avatar: this.users.current.avatar
         });
 
         // Update Room Status if booking is literally "Right Now"? 
@@ -267,7 +385,9 @@ class DataManager {
             date: customDate,
             time: customTime,
             status: "confirmed",
-            pin: pin
+            pin: pin,
+            avatar: this.users.current.avatar,
+            createdAt: Date.now()
         };
         this.users.current.bookings.unshift(newBooking);
 
@@ -322,9 +442,38 @@ class DataManager {
             return { success: false, message: `Slots ${conflicts.join(', ')} are no longer available.` };
         }
 
+        // 1. Validation: Prevent Concurrent Bookings
+        const userBookings = this.users.current.bookings || [];
+        const hasConflict = times.some(newTime => {
+            return userBookings.some(existing => {
+                // Check date match first
+                if (existing.date !== date) return false;
+
+                // Check time overlap
+                // Format is HH:MM - HH:MM
+                const [newStart, newEnd] = newTime.split('-').map(t => parseInt(t.replace(':', '')));
+                const [existStart, existEnd] = existing.time.split('-').map(t => parseInt(t.replace(':', '')));
+
+                // Simple overlap check: (StartA < EndB) and (EndA > StartB)
+                return (newStart < existEnd && newEnd > existStart);
+            });
+        });
+
+        if (hasConflict) {
+            return {
+                success: false,
+                message: "You already have a booking during this time slot."
+            };
+        }
+
         // 2. Book ALL slots (Granular for Room)
         times.forEach(time => {
-            room.bookings.push({ date, time });
+            room.bookings.push({
+                date,
+                time,
+                userName: this.users.current.name,
+                avatar: this.users.current.avatar
+            });
         });
 
         // 3. Smart Merge for User Ticket (User Friendly)
@@ -378,7 +527,9 @@ class DataManager {
                 date: date,
                 time: timeStr,
                 status: "confirmed",
-                pin: pin
+                pin: pin,
+                avatar: this.users.current.avatar,
+                createdAt: Date.now()
             };
         });
 
@@ -401,14 +552,119 @@ class DataManager {
         this.save();
     }
 
-    // 3. Tablet Check-In (For Demo, we just confirm occupancy or toggle)
+    // 3. Tablet Check-In & Auto-Release
     checkIn(roomId) {
-        // Simulation: For now just alert or ensure it is occupied
-        // If we want real logic: check-in makes a 'reserved' room 'occupied'.
-        // But our simple model just has available/occupied.
-        // Let's say check-in validaties the booking.
-        return true;
+        const room = this.getRoom(roomId);
+        if (!room || !room.bookings) return false;
+
+        const now = new Date();
+        const currentTime = now.getHours() * 100 + now.getMinutes();
+        const todayStr = now.toISOString().split('T')[0];
+
+        // Find active booking for NOW that is 'confirmed'
+        // Find active booking for NOW (or upcoming within 15 mins) that is 'confirmed'
+        const activeBooking = room.bookings.find(b => {
+            if (b.date !== todayStr) return false;
+            const [startStr, endStr] = b.time.split('-').map(s => s.trim());
+
+            const startH = parseInt(startStr.split(':')[0]);
+            const startM = parseInt(startStr.split(':')[1]);
+            const startTime = startH * 100 + startM;
+
+            const endH = parseInt(endStr.split(':')[0]);
+            const endM = parseInt(endStr.split(':')[1]);
+            const endTime = endH * 100 + endM;
+
+            // Buffer: Allow check-in 15 mins before start
+            // Convert to minutes for easier calc
+            const currentTotal = Math.floor(currentTime / 100) * 60 + (currentTime % 100);
+            const startTotal = startH * 60 + startM;
+            const endTotal = endH * 60 + endM;
+
+            // Logic:
+            // 1. Inside the slot: Start <= Now < End
+            // 2. Early Arrival: Start - 15 <= Now < Start
+            return (currentTotal >= startTotal - 15 && currentTotal < endTotal);
+        });
+
+        if (activeBooking && activeBooking.status === 'confirmed') {
+            activeBooking.status = 'checked-in';
+            // Also update user's record
+            this.users.current.bookings.forEach(ub => {
+                if (ub.roomId === roomId && ub.date === activeBooking.date && ub.time === activeBooking.time) {
+                    ub.status = 'checked-in';
+                }
+            });
+            this.save();
+            return { success: true, message: `Welcome, ${activeBooking.userName}!` };
+        }
+
+        return { success: false, message: "No active booking found to check in." };
+    }
+
+    checkAutoRelease(roomId) {
+        const room = this.getRoom(roomId);
+        if (!room || !room.bookings) return;
+
+        const now = new Date();
+        const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+        const todayStr = now.toISOString().split('T')[0];
+        let changed = false;
+
+        // Filter out bookings that missed the 15-min window
+        // Keep bookings that are:
+        // 1. Not today
+        // 2. Today but future
+        // 3. Today, past start, but 'checked-in'
+        // 4. Today, past start, 'confirmed', but within 15 mins of start
+
+        const originalLength = room.bookings.length;
+        room.bookings = room.bookings.filter(b => {
+            if (b.date !== todayStr) return true; // Keep other dates
+            if (b.status === 'checked-in') return true; // Keep checked-in
+
+            const [startStr] = b.time.split('-').map(s => s.trim());
+            const startHour = parseInt(startStr.split(':')[0]);
+            const startMin = parseInt(startStr.split(':')[1]);
+
+            const startTotalMinutes = startHour * 60 + startMin;
+            const diff = currentTotalMinutes - startTotalMinutes;
+
+            // If it's waiting (>0) and diff > 15 mins and still 'confirmed' -> DROP
+            if (diff > 15 && b.status === 'confirmed') {
+
+                // Smart Check: Late Booking Grace Period
+                // If the booking was created RECENTLY (within last 15 mins), do NOT drop it yet.
+                // This handles "Walk-up / Late" bookings (e.g. booking 13:00 at 13:20)
+                if (b.createdAt) {
+                    const createdMinsAgo = (Date.now() - b.createdAt) / 60000;
+                    if (createdMinsAgo < 15) return true; // Keep it
+                }
+
+                // Remove from User's list too
+                // DISABLED: User feedback indicates this is too aggressive.
+                // Keeping booking active even if late.
+                /* 
+                this.users.current.bookings = this.users.current.bookings.filter(ub =>
+                    !(ub.roomId === roomId && ub.date === b.date && ub.time === b.time)
+                );
+                return false; // Auto-Release
+                */
+            }
+            return true;
+        });
+
+        if (room.bookings.length !== originalLength) {
+            this.save();
+            return true; // Signal visual update
+        }
+        return false;
     }
 }
 
 export const dataManager = new DataManager();
+
+// Make dataManager globally accessible for inline onclick handlers
+if (typeof window !== 'undefined') {
+    window.dataManager = dataManager;
+}

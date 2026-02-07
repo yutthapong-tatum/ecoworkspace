@@ -78,11 +78,12 @@ export function renderEmployeeApp(container) {
         <div style="padding: 0 20px; margin-bottom: 20px;">
             <input type="text" id="room-search" class="glass-input" placeholder="Search rooms..." />
             <div class="flex-row" style="margin-top: 10px; flex-wrap: wrap; gap: 8px; justify-content: flex-start;">
-            <button class="glass-btn filter-btn" data-filter="all" style="padding: 5px 10px; font-size: 0.75rem; background: rgba(255,255,255,0.3);">All</button>
-            <button class="glass-btn filter-btn" data-filter="available" style="padding: 5px 10px; font-size: 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.2);">Available Now</button>
-            <button class="glass-btn filter-btn" data-filter="Pod" style="padding: 5px 10px; font-size: 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.2);">Pods</button>
-            <button class="glass-btn filter-btn" data-filter="Meeting" style="padding: 5px 10px; font-size: 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.2);">Meeting</button>
-            <button class="glass-btn filter-btn" data-filter="Conference" style="padding: 5px 10px; font-size: 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.2);">Conf.</button>
+              <button class="glass-btn filter-btn" data-filter="all" style="padding: 5px 10px; font-size: 0.75rem; background: rgba(255,255,255,0.3);">All</button>
+              <button class="glass-btn filter-btn" data-filter="available" style="padding: 5px 10px; font-size: 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.2);">Available</button>
+              <button class="glass-btn filter-btn" data-filter="cap-1-10" style="padding: 5px 10px; font-size: 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.2);"><10 Pax</button>
+              <button class="glass-btn filter-btn" data-filter="cap-10-20" style="padding: 5px 10px; font-size: 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.2);">10-20 Pax</button>
+              <button class="glass-btn filter-btn" data-filter="cap-20+" style="padding: 5px 10px; font-size: 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.2);">20+ Pax</button>
+              <button class="glass-btn filter-btn" data-filter="Meeting" style="padding: 5px 10px; font-size: 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.2);">Meeting</button>
             </div>
         </div>
 
@@ -152,7 +153,10 @@ export function renderEmployeeApp(container) {
                 <p class="text-sm" style="opacity: 0.6; margin-bottom: 25px;">Employee ID: 885921</p>
                 
                 <div style="display: flex; gap: 10px; justify-content: center;">
-                    <button class="glass-btn" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4);" onclick="dataManager.reset(); window.location.reload();">
+                    <button class="glass-btn" style="background: rgba(255, 255, 255, 0.1);" onclick="window.location.hash='#'">
+                        🏠 Exit to Portal
+                    </button>
+                    <button class="glass-btn" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4);" onclick="dataManager.reset()">
                         ⚠️ Reset App Data
                     </button>
                 </div>
@@ -162,7 +166,7 @@ export function renderEmployeeApp(container) {
     }
 
     container.innerHTML = `
-    <div style="max-width: 480px; width: 100%; margin: 0 auto; min-height: 100vh; padding-bottom: 80px;">
+    <div style="max-width: 480px; width: 100%; margin: 0 auto; min-height: 100vh; padding-bottom: 20px;">
       
       ${mainContent}
 
@@ -179,8 +183,9 @@ export function renderEmployeeApp(container) {
           </div>
       </div>
 
-      <!-- Bottom Nav (Interactive) -->
-      <nav class="glass-panel" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 10px 20px; display: flex; justify-content: space-between; z-index: 100;">
+
+      <!-- Smart Bottom Nav (Restored & Auto-Hiding) -->
+      <nav id="employee-nav" class="glass-panel" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 10px 20px; display: flex; justify-content: space-between; z-index: 100; transition: transform 0.3s ease-in-out;">
         <div id="nav-home" style="font-size: 1.5rem; opacity: ${activeTab === 'home' ? '1' : '0.5'}; cursor: pointer; transition: opacity 0.2s;">🏠</div>
         <div id="nav-schedule" style="font-size: 1.5rem; opacity: ${activeTab === 'schedule' ? '1' : '0.5'}; cursor: pointer; transition: opacity 0.2s;">📅</div>
         <div id="nav-profile" style="font-size: 1.5rem; opacity: ${activeTab === 'profile' ? '1' : '0.5'}; cursor: pointer; transition: opacity 0.2s;">👤</div>
@@ -319,13 +324,37 @@ export function renderEmployeeApp(container) {
       popup.classList.remove('hidden');
     };
 
+
     // Nav Logic
+    const nav = document.getElementById('employee-nav');
+    let lastScrollY = window.scrollY;
+    let scrollTimeout;
+
+    // Smart Auto-Hide/Show
+    window.addEventListener('scroll', () => {
+      const currentScrollY = window.scrollY;
+
+      // Scrolling Down -> Hide
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        nav.style.transform = 'translate(-50%, 200%)'; // Move down out of view
+      }
+      // Scrolling Up -> Show
+      else {
+        nav.style.transform = 'translateX(-50%)'; // Reset to original
+      }
+
+      lastScrollY = currentScrollY;
+
+      // Idle Timer: Show after 2 seconds of no scroll
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        nav.style.transform = 'translateX(-50%)';
+      }, 1500);
+    });
+
     document.getElementById('nav-home').onclick = () => { activeTab = 'home'; render(); };
     document.getElementById('nav-schedule').onclick = () => { activeTab = 'schedule'; render(); };
     document.getElementById('nav-profile').onclick = () => { activeTab = 'profile'; render(); };
-
-    // Attach Event Listeners
-    // Store selected room ID
     let selectedRoomId = null;
     let selectedTimes = new Set();
 
@@ -412,7 +441,9 @@ export function renderEmployeeApp(container) {
                 });
 
                 // 2. Check if Past (if today)
-                const isPast = isToday && (slotRange.start < currentMinutes);
+                // Allow "Late Booking" for current slot (e.g. 13:20 for 13:00-14:00)
+                // ONLY filter if the ENTIRE slot is in the past (End <= Now)
+                const isPast = isToday && (slotRange.end <= currentMinutes);
 
                 const btn = document.createElement('button');
                 btn.textContent = slotTime.split(' - ')[0]; // Show Start time only

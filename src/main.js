@@ -13,7 +13,7 @@ const renderShell = () => {
         <div style="font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px;">
            ✨ Krungthai CO-Working Space
         </div>
-        <a href="#" style="color: white; text-decoration: none; font-size: 0.9rem; opacity: 0.7; font-weight: 500;">🏠 Home</a>
+        <a id="nav-home-link" href="#" style="color: white; text-decoration: none; font-size: 0.9rem; opacity: 0.7; font-weight: 500;">🏠 Home</a>
       </nav>
 
       <!-- View Container -->
@@ -53,9 +53,16 @@ import { renderEmployeeApp } from './components/EmployeeApp.js';
 import { renderTabletApp } from './components/TabletApp.js';
 import { renderAdminDashboard } from './components/AdminDashboard.js';
 
+let currentCleanup = null;
+
 // Router Logic
 const handleRoute = () => {
-  const hash = window.location.hash;
+  if (currentCleanup) {
+    currentCleanup();
+    currentCleanup = null;
+  }
+
+  const hash = window.location.hash || '#';
   const container = document.querySelector('#view-container');
 
   if (!container) return; // Shell not ready
@@ -63,14 +70,22 @@ const handleRoute = () => {
   // Clear previous content
   container.innerHTML = '';
 
-  if (hash === '#employee') {
-    renderEmployeeApp(container);
-  } else if (hash === '#tablet') {
-    renderTabletApp(container);
-  } else if (hash === '#admin') {
-    renderAdminDashboard(container);
+  // Parse Hash & Params
+  const [route, param] = hash.split('/');
+  const homeLink = document.querySelector('#nav-home-link');
+
+  if (route === '#employee') {
+    if (homeLink) homeLink.style.display = 'none';
+    currentCleanup = renderEmployeeApp(container);
+  } else if (route === '#tablet') {
+    if (homeLink) homeLink.style.display = 'none';
+    currentCleanup = renderTabletApp(container, param);
+  } else if (route === '#admin') {
+    if (homeLink) homeLink.style.display = 'none';
+    currentCleanup = renderAdminDashboard(container);
   } else {
-    renderWelcome();
+    if (homeLink) homeLink.style.display = 'block';
+    currentCleanup = renderWelcome();
   }
 }
 

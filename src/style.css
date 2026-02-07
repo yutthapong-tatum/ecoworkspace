@@ -2,22 +2,23 @@
   /* Font Family */
   --font-main: 'Inter', system-ui, -apple-system, sans-serif;
 
-  /* Glassmorphism Color Palette */
-  --bg-gradient: linear-gradient(135deg, #3b82f6 0%, #22d3ee 100%);
-  --glass-bg: rgba(255, 255, 255, 0.25);
-  --glass-border: rgba(255, 255, 255, 0.4);
+  /* Light Theme Color Palette */
+  --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.9);
   --glass-blur: blur(20px);
-  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
 
-  /* Text Colors */
+  /* Text Colors - Dark for light background */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
   --text-white: #ffffff;
-  --text-muted: rgba(255, 255, 255, 0.8);
-  --text-dark: #1e293b;
 
   /* Status Colors */
-  --success: #4ade80;
-  --danger: #f87171;
-  --warning: #fbbf24;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
 
   /* Spacing */
   --spacing-sm: 0.5rem;
@@ -45,7 +46,7 @@ body {
   font-family: var(--font-main);
   background: var(--bg-gradient);
   min-height: 100vh;
-  color: var(--text-white);
+  color: var(--text-primary);
   overflow-x: hidden;
   /* Fixed background to prevent scroll jump on mobile */
   background-attachment: fixed;
